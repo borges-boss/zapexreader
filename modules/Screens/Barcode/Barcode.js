@@ -53,7 +53,8 @@ function Barcode({navigation, route}) {
             global.scannedBarcode.filter(value => {
               return value.data === result.data;
             }).length <= 0
-          ) {
+          ) {//beep_07
+            HardwareUtils.playSound('beep_07.mp3');
             result.isOnTheList = true;
             global.scannedBarcode.push(result);
             console.log('Barcode result: ' + JSON.stringify(result));
@@ -61,12 +62,12 @@ function Barcode({navigation, route}) {
             console.log('Already on the list');
           }
         } else {
-          HardwareUtils.playSound('beep_buzzer_fail.wav');
           if (
             global.scannedBarcode.filter(value => {
               return value.data === result.data;
             }).length <= 0
           ) {
+            HardwareUtils.playSound('beep_buzzer_fail.wav');
             result.isOnTheList = false;
             global.scannedBarcode.push(result);
             console.log('Barcode result: ' + JSON.stringify(result));

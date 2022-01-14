@@ -2,6 +2,7 @@ import Sound from 'react-native-sound';
 
 const HardwareUtils = {
   playSound: function (file) {
+    Sound.setCategory('Playback');
     var sound = new Sound(file, Sound.MAIN_BUNDLE, error => {
       if (error) {
         console.log('failed to load the sound', error);
@@ -27,6 +28,8 @@ const HardwareUtils = {
           console.log('playback failed due to audio decoding errors');
         }
       });
+      
+      sound.setVolume(0.5);
     });
   },
 };

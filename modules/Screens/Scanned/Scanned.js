@@ -47,7 +47,7 @@ const Item = props => {
           }}
           name={'trash-2'}
           size={24}
-          color={colors.text}
+          color={(props.isOnTheList) ? colors.text : "tomato"}
         />
       </View>
     </TouchableRipple>
