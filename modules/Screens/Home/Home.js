@@ -28,16 +28,19 @@ function Home({navigation, route}) {
         .then(function (json) {
           if (json !== null && json.Sucesso !== undefined && json.Sucesso) {
             if (typeof json.oObj === 'string')
-              global.codesFetched = JSON.parse(json.oObj);
+                global.scannedBarcode = JSON.parse(json.oObj);
             else if (typeof json.oObj === 'object')
-              global.codesFetched = json.oObj;
+                global.scannedBarcode = json.oObj;
 
 
               console.log(JSON.stringify(json));
               //Go to scanned screen
-              if(global.codesFetched.length > 0){
-                global.scannedBarcode = global.codesFetched;
-                navigation.navigate("Scanned",{preScreen:'Home'});
+              if(global.scannedBarcode.length > 0){
+                global.codesFetched = global.scannedBarcode;
+                
+                global.scannedBarcode.push({Codigo:7896658029608});
+                //global.codesFetched.push({Codigo:7896658029608});
+                navigation.navigate("Scanned",{preScreen:'Home',data: global.codesFetched});
               } 
               else{
                 setMessage("Nenhum item encontrado");
@@ -90,6 +93,7 @@ function Home({navigation, route}) {
         }}>
         <View style={{width: '100%'}}>
           <TextInput
+            keyboardType={'numeric'}
             onFocus={()=> {
                setFieldError(false);
             }}

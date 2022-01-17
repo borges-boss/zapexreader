@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, FlatList, Platform} from 'react-native';
+import {View, Text, FlatList, Platform, BackHandler} from 'react-native';
 import {TouchableRipple} from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppStyle from '../../Assets/styles/AppStyle';
@@ -26,11 +26,22 @@ const Item = props => {
           <MaterialCommunityIcons
             name={'barcode-scan'}
             size={28}
-            color={(props.isOnTheList!==undefined && props.isOnTheList) ? 'green' : props.isOnTheList===undefined ? colors.text : "tomato"}
+            color={
+              props.isOnTheList !== undefined && props.isOnTheList
+                ? 'green'
+                : props.isOnTheList === undefined
+                ? colors.text
+                : 'tomato'
+            }
           />
           <Text
             style={{
-              color: (props.isOnTheList!==undefined && props.isOnTheList) ? colors.text : props.isOnTheList===undefined ? colors.text : "tomato",
+              color:
+                props.isOnTheList !== undefined && props.isOnTheList
+                  ? 'green'
+                  : props.isOnTheList === undefined
+                  ? colors.text
+                  : 'tomato',
               fontSize: 18,
               marginLeft: 16,
               lineHeight: 25,
@@ -40,14 +51,17 @@ const Item = props => {
         </View>
         <Feather
           onPress={() => {
-            global.scannedBarcode = global.scannedBarcode.filter(value => {
-              return value.Codigo !== props.code;
-            });
-            props.onDelete(global.scannedBarcode);
+            props.onDelete(props.code);
           }}
           name={'trash-2'}
           size={24}
-          color={(props.isOnTheList!==undefined && props.isOnTheList) ? colors.text : props.isOnTheList===undefined ? colors.text : "tomato" }
+          color={
+            props.isOnTheList !== undefined && props.isOnTheList
+              ? 'green'
+              : props.isOnTheList === undefined
+              ? colors.text
+              : 'tomato'
+          }
         />
       </View>
     </TouchableRipple>
@@ -55,46 +69,69 @@ const Item = props => {
 };
 
 function Scanned({navigation, route}) {
-  const [data, setData] = useState(global.codesFetched);
+  const [data, setData] = useState([]);
   const {colors} = useTheme();
 
   useEffect(() => {
-    if (global.scannedBarcode !== undefined && global.scannedBarcode !== null) {
-      setData([]);
-      setData(global.scannedBarcode);
+    BackHandler.addEventListener('hardwareBackPress', function () {
+      console.log('BackHardware button override');
+      global.scannedBarcode = [];
+      navigation.navigate('Home');
+      return true;
+    });
+  }, [])
+
+  useEffect(() => {
+    console.log("effect scanned");
+    if (route.params.data !== undefined && route.params.data !== null) {
+      //setData([]);
+      setData(route.params.data);
     }
-  }, [global.scannedBarcode]);
+  });
 
   return (
     <View style={{height: '100%'}}>
-      <Toolbar icon={'replay'} action={()=> {
-        navigation.navigate("Home");
-
-      }}/>
+      <Toolbar
+        icon={'replay'}
+        action={() => {
+          navigation.navigate('Home');
+        }}
+      />
       <View style={{padding: 8}}>
-       { (data.length > 0) ?
-        <FlatList
-          style={{marginTop: '8%'}}
-          data={data}
-          keyExtractor={(item, index) => item + index}
-          renderItem={({item}) => (
-            <Item
-              code={item.Codigo}
-              isOnTheList={item.isOnTheList !== undefined ? item.isOnTheList : undefined}
-              onDelete={newList => {
-                setData([]);
-                setData(newList);
-              }}
-            />
-          )}
-        /> 
-        : 
-        <View style={{height:"100%",justifyContent:"center",alignItems:"center"}}>
-          <Text style={{color:colors.text}}>
-            Nenhum codigo de barras escaneado
-          </Text>
-        </View>
-        }
+        {data.length > 0 ? (
+          <FlatList
+            style={{marginTop: '8%'}}
+            data={data}
+            keyExtractor={(item, index) => item + index}
+            renderItem={({item}) => (
+              <Item
+                code={item.Codigo}
+                isOnTheList={
+                  item.isOnTheList !== undefined ? item.isOnTheList : undefined
+                }
+                onDelete={code => {
+                  let temp = data.filter((value)=>{return value.Codigo != code});
+                  global.scannedBarcode = temp;
+                  route.params.data = temp;
+                  console.log(route.params.data);
+                  //setData([]);
+                  setData(temp);
+                }}
+              />
+            )}
+          />
+        ) : (
+          <View
+            style={{
+              height: '100%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Text style={{color: colors.text}}>
+              Nenhum codigo de barras escaneado
+            </Text>
+          </View>
+        )}
       </View>
       <FloatingActionButton
         onPress={async () => {

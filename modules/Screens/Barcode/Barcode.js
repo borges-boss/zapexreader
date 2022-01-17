@@ -19,7 +19,52 @@ BarcodeFormat.DATA_MATRIX
 BarcodeFormat.PDF_417
 */
 
+async function processBarcode(result) {
+  console.log(
+    'List of codes fetched: ' + JSON.stringify(global.scannedBarcode),
+  );
+  if (
+    global.scannedBarcode.filter(value => {
+      return value.Codigo == result.data;
+    }).length > 0
+  ) {
+    console.log('Code is valid');
+    console.log('Codes: ' + JSON.stringify(global.scannedBarcode));
+
+    //beep_07
+    for (let i = 0; i < global.scannedBarcode.length; i++) {
+      if (
+        global.scannedBarcode[i].Codigo == result.data &&
+        global.scannedBarcode[i].isOnTheList == undefined
+      ) {
+        HardwareUtils.playSound('beep_07.mp3');
+        global.scannedBarcode[i].isOnTheList = true;
+        break;
+      }
+    }
+    console.log('Barcode result: ' + JSON.stringify(result));
+  } else {
+    console.log("It's not on the fetched list");
+    if (
+      global.scannedBarcode.filter(value => {
+        return value.Codigo == result.data;
+      }).length <= 0
+    ) {
+      HardwareUtils.playSound('beep_buzzer_fail.wav');
+      result.isOnTheList = false;
+      result.Codigo = result.data;
+      console.log('Not on the list: ' + JSON.stringify(result));
+      global.scannedBarcode.push(result);
+      console.log('Barcode result: ' + JSON.stringify(result));
+    } else {
+      console.log('Already on the list');
+    }
+  }
+}
+
 function Barcode({navigation, route}) {
+  const [isProcessing, setIsProcessing] = useState(false);
+
   useEffect(() => {
     if (route.params.preScreen === 'Home') {
       BackHandler.addEventListener('hardwareBackPress', function () {
@@ -43,47 +88,12 @@ function Barcode({navigation, route}) {
 
   return (
     <BarcodeScanner
-      onBarCodeRead={result => {
-        if (
-          global.codesFetched.filter(value => {
-            return value.Codigo === result.data;
-          }).length > 0
-        ) {
-          if (
-            global.scannedBarcode.filter(value => {
-              return value.Codigo === result.data;
-            }).length <= 0
-          ) {
-            //beep_07
-            HardwareUtils.playSound('beep_07.mp3');
-            for (let i = 0; i < global.scannedBarcode.length; i++) {
-              if (global.scannedBarcode[i].Codigo === result.code && (global.scannedBarcode[i].isOnTheList === undefined) ) {
-                global.scannedBarcode.isOnTheList = true;
-                break;
-              }
-            }
-            console.log('Barcode result: ' + JSON.stringify(result));
-          } else {
-            console.log('Already on the list');
-          }
-        } else {
-          if (
-            global.scannedBarcode.filter(value => {
-              return value.Codigo === result.data;
-            }).length <= 0
-          ) {
-            HardwareUtils.playSound('beep_buzzer_fail.wav');
-            result.isOnTheList = false;
-            result.Codigo = result.data;
-            console.log("Not on the list: "+JSON.stringify(result));
-            global.scannedBarcode.push(result);
-            console.log('Barcode result: ' + JSON.stringify(result));
-          } else {
-            console.log('Already on the list');
-          }
+      onBarCodeRead={async result => {
+        if (!isProcessing) {
+          setIsProcessing(true);
+          await processBarcode(result);
+          navigation.navigate('Scanned', {data: global.scannedBarcode});
         }
-
-        navigation.navigate('Scanned');
       }}
       style={{flex: 1}}
       torchMode={scannerConfig.torchMode}
