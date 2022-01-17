@@ -46,17 +46,22 @@ function Barcode({navigation, route}) {
       onBarCodeRead={result => {
         if (
           global.codesFetched.filter(value => {
-            return value.code === result.data;
+            return value.Codigo === result.data;
           }).length > 0
         ) {
           if (
             global.scannedBarcode.filter(value => {
-              return value.data === result.data;
+              return value.Codigo === result.data;
             }).length <= 0
-          ) {//beep_07
+          ) {
+            //beep_07
             HardwareUtils.playSound('beep_07.mp3');
-            result.isOnTheList = true;
-            global.scannedBarcode.push(result);
+            for (let i = 0; i < global.scannedBarcode.length; i++) {
+              if (global.scannedBarcode[i].Codigo === result.code && (global.scannedBarcode[i].isOnTheList === undefined) ) {
+                global.scannedBarcode.isOnTheList = true;
+                break;
+              }
+            }
             console.log('Barcode result: ' + JSON.stringify(result));
           } else {
             console.log('Already on the list');
@@ -64,11 +69,13 @@ function Barcode({navigation, route}) {
         } else {
           if (
             global.scannedBarcode.filter(value => {
-              return value.data === result.data;
+              return value.Codigo === result.data;
             }).length <= 0
           ) {
             HardwareUtils.playSound('beep_buzzer_fail.wav');
             result.isOnTheList = false;
+            result.Codigo = result.data;
+            console.log("Not on the list: "+JSON.stringify(result));
             global.scannedBarcode.push(result);
             console.log('Barcode result: ' + JSON.stringify(result));
           } else {

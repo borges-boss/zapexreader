@@ -26,11 +26,11 @@ const Item = props => {
           <MaterialCommunityIcons
             name={'barcode-scan'}
             size={28}
-            color={(props.isOnTheList) ? colors.text : "tomato"}
+            color={(props.isOnTheList!==undefined && props.isOnTheList) ? 'green' : props.isOnTheList===undefined ? colors.text : "tomato"}
           />
           <Text
             style={{
-              color: (props.isOnTheList) ? colors.text : "tomato",
+              color: (props.isOnTheList!==undefined && props.isOnTheList) ? colors.text : props.isOnTheList===undefined ? colors.text : "tomato",
               fontSize: 18,
               marginLeft: 16,
               lineHeight: 25,
@@ -41,13 +41,13 @@ const Item = props => {
         <Feather
           onPress={() => {
             global.scannedBarcode = global.scannedBarcode.filter(value => {
-              return value.data !== props.code;
+              return value.Codigo !== props.code;
             });
             props.onDelete(global.scannedBarcode);
           }}
           name={'trash-2'}
           size={24}
-          color={(props.isOnTheList) ? colors.text : "tomato"}
+          color={(props.isOnTheList!==undefined && props.isOnTheList) ? colors.text : props.isOnTheList===undefined ? colors.text : "tomato" }
         />
       </View>
     </TouchableRipple>
@@ -55,7 +55,7 @@ const Item = props => {
 };
 
 function Scanned({navigation, route}) {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(global.codesFetched);
   const {colors} = useTheme();
 
   useEffect(() => {
@@ -67,7 +67,10 @@ function Scanned({navigation, route}) {
 
   return (
     <View style={{height: '100%'}}>
-      <Toolbar />
+      <Toolbar icon={'replay'} action={()=> {
+        navigation.navigate("Home");
+
+      }}/>
       <View style={{padding: 8}}>
        { (data.length > 0) ?
         <FlatList
@@ -76,8 +79,8 @@ function Scanned({navigation, route}) {
           keyExtractor={(item, index) => item + index}
           renderItem={({item}) => (
             <Item
-              code={item.data}
-              isOnTheList={item.isOnTheList}
+              code={item.Codigo}
+              isOnTheList={item.isOnTheList !== undefined ? item.isOnTheList : undefined}
               onDelete={newList => {
                 setData([]);
                 setData(newList);

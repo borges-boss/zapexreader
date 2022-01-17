@@ -1,6 +1,7 @@
 import React from 'react';
-import {View, Image} from 'react-native';
+import {View, Image,Text} from 'react-native';
 import {useTheme} from '@react-navigation/native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const Toolbar = props => {
  
@@ -24,6 +25,13 @@ const Toolbar = props => {
           <Image resizeMode={'contain'} style={{width:124,height:37}} source={require("../../Assets/images/logo_zapex.png")} />
         </View>
       </View>
+
+      {props.icon!==undefined && props.action!==undefined ? 
+        <MaterialCommunityIcons style={{alignSelf:"center",paddingRight:8}} onPress={()=>{
+            props.action();
+        }} name={props.icon} size={24} color={colors.text}/>:
+        null
+      }
     </View>
   );
 };

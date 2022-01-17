@@ -7,6 +7,8 @@ import AppStyle from '../../Assets/styles/AppStyle';
 import {useTheme} from '@react-navigation/native';
 import PermissionUtils from '../../Logic/PermissionUtils';
 import {Snackbar} from 'react-native-paper';
+import HomeService from './HomeService';
+
 //Icon ionic-ios-barcode
 //import Icon from 'react-native-vector-icons/Ionicons';
 //import Icon from 'react-native-vector-icons/Feather';
@@ -16,15 +18,51 @@ function Home({navigation, route}) {
   const [mapCode, setMapCode] = useState(null);
   const [fieldError, setFieldError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [message,setMessage] = useState(null);
+  const [message, setMessage] = useState(null);
   const {colors} = useTheme();
 
   const search = useCallback(() => {
     if (mapCode !== null && mapCode !== ' ') {
       setIsLoading(true);
+      HomeService.getBarcodeByMapCode(mapCode)
+        .then(function (json) {
+          if (json !== null && json.Sucesso !== undefined && json.Sucesso) {
+            if (typeof json.oObj === 'string')
+              global.codesFetched = JSON.parse(json.oObj);
+            else if (typeof json.oObj === 'object')
+              global.codesFetched = json.oObj;
+
+
+              console.log(JSON.stringify(json));
+              //Go to scanned screen
+              if(global.codesFetched.length > 0){
+                global.scannedBarcode = global.codesFetched;
+                navigation.navigate("Scanned",{preScreen:'Home'});
+              } 
+              else{
+                setMessage("Nenhum item encontrado");
+              }
+          } else if (
+            json !== null &&
+            json.Sucesso !== undefined &&
+            !json.Sucesso
+          ) {
+            setMessage('(' + json.IdErro + ') ' + json.Msg);
+          } else {
+            setMessage('Não foi possivel obter uma resposta do servidor');
+          }
+
+          setIsLoading(false);
+        })
+        .catch(err => {
+          setMessage('Erro, por favor tente mais tarde');
+          console.log(err);
+          setIsLoading(false);
+        });
     } else {
-        setMessage("O campo não pode ficar vazio");
-        setFieldError(true);
+      setMessage('O campo não pode ficar vazio');
+      setFieldError(true);
+      setIsLoading(false);
     }
   });
 
@@ -45,13 +83,16 @@ function Home({navigation, route}) {
       <View
         style={{
           paddingTop: '10%',
-          height: '100%',
+          height: '70%',
           alignItems: 'center',
           paddingLeft: 16,
           paddingRight: 16,
         }}>
         <View style={{width: '100%'}}>
           <TextInput
+            onFocus={()=> {
+               setFieldError(false);
+            }}
             error={fieldError}
             activeOutlineColor={colors.primary}
             placeholder={'Cogigo do mapa'}
@@ -65,7 +106,8 @@ function Home({navigation, route}) {
           <Button
             icon={'magnify'}
             onPress={() => {
-              navigation.navigate('Barcode', {preScreen: 'Home'});
+              //navigation.navigate('Barcode', {preScreen: 'Home'});
+              search();
             }}
             loading={isLoading}
             color={'#fff'}
@@ -79,8 +121,8 @@ function Home({navigation, route}) {
       </View>
 
       <Snackbar
-        visible={message!==null}
-        onDismiss={()=>{
+        visible={message !== null}
+        onDismiss={() => {
           setMessage(null);
         }}
         action={{
