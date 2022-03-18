@@ -1,5 +1,5 @@
 import React, {Component, useCallback, useState} from 'react';
-import {View, Text, Platform} from 'react-native';
+import {View, Text, Platform, BackHandler} from 'react-native';
 import {TextInput} from 'react-native-paper';
 import Toolbar from '../Components/Toolbar';
 import {Button} from 'react-native-paper';
@@ -8,7 +8,7 @@ import {useTheme} from '@react-navigation/native';
 import PermissionUtils from '../../Logic/PermissionUtils';
 import {Snackbar} from 'react-native-paper';
 import HomeService from './HomeService';
-
+import {SafeAreaView} from 'react-native-safe-area-context';
 //Icon ionic-ios-barcode
 //import Icon from 'react-native-vector-icons/Ionicons';
 //import Icon from 'react-native-vector-icons/Feather';
@@ -37,8 +37,6 @@ function Home({navigation, route}) {
               //Go to scanned screen
               if(global.scannedBarcode.length > 0){
                 global.codesFetched = global.scannedBarcode;
-                
-                global.scannedBarcode.push({Codigo:7896658029608});
                 //global.codesFetched.push({Codigo:7896658029608});
                 navigation.navigate("Scanned",{preScreen:'Home',data: global.codesFetched});
               } 
@@ -70,7 +68,7 @@ function Home({navigation, route}) {
   });
 
   return (
-    <View>
+    <SafeAreaView>
       <Toolbar />
       <Text style={[AppStyle.textTitle, {marginTop: 24, marginLeft: 16}]}>
         Bem vindo ao Zapex Scanner
@@ -139,7 +137,7 @@ function Home({navigation, route}) {
         }}>
         {message}
       </Snackbar>
-    </View>
+    </SafeAreaView>
   );
 }
 
