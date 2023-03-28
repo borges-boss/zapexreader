@@ -26,23 +26,29 @@ function Home({navigation, route}) {
       setIsLoading(true);
       HomeService.getBarcodeByMapCode(mapCode)
         .then(function (json) {
-          if (json !== null && json.Sucesso !== undefined && json.Sucesso) {
+          if (
+            json !== null &&
+            json !== undefined &&
+            json.Sucesso !== undefined &&
+            json.Sucesso
+          ) {
             if (typeof json.oObj === 'string')
-                global.scannedBarcode = JSON.parse(json.oObj);
+              global.scannedBarcode = JSON.parse(json.oObj);
             else if (typeof json.oObj === 'object')
-                global.scannedBarcode = json.oObj;
+              global.scannedBarcode = json.oObj;
 
-
-              console.log(JSON.stringify(json));
-              //Go to scanned screen
-              if(global.scannedBarcode.length > 0){
-                global.codesFetched = global.scannedBarcode;
-                //global.codesFetched.push({Codigo:7896658029608});
-                navigation.navigate("Scanned",{preScreen:'Home',data: global.codesFetched});
-              } 
-              else{
-                setMessage("Nenhum item encontrado");
-              }
+            console.log(JSON.stringify(json));
+            //Go to scanned screen
+            if (global.scannedBarcode.length > 0) {
+              global.codesFetched = global.scannedBarcode;
+              //global.codesFetched.push({Codigo:7896658029608});
+              navigation.navigate('Scanned', {
+                preScreen: 'Home',
+                data: global.codesFetched,
+              });
+            } else {
+              setMessage('Nenhum item encontrado');
+            }
           } else if (
             json !== null &&
             json.Sucesso !== undefined &&
@@ -68,7 +74,7 @@ function Home({navigation, route}) {
   });
 
   return (
-    <SafeAreaView>
+    <SafeAreaView style={{height: '100%'}}>
       <Toolbar />
       <Text style={[AppStyle.textTitle, {marginTop: 24, marginLeft: 16}]}>
         Bem vindo ao Zapex Scanner
@@ -92,13 +98,17 @@ function Home({navigation, route}) {
         <View style={{width: '100%'}}>
           <TextInput
             keyboardType={'numeric'}
-            onFocus={()=> {
-               setFieldError(false);
+            onFocus={() => {
+              setFieldError(false);
             }}
             error={fieldError}
             activeOutlineColor={colors.primary}
             placeholder={'Cogigo do mapa'}
             value={mapCode}
+            onSubmitEditing={({nativeEvent})=> {
+              setMapCode(nativeEvent.text);
+              search();
+            }}
             onChangeText={text => {
               setMapCode(text);
             }}
@@ -117,7 +127,7 @@ function Home({navigation, route}) {
               backgroundColor: !isLoading ? colors.primary : 'gray',
               padding: 8,
             }}>
-            Procurar
+            {!isLoading ? 'Procurar' : 'Procurando'}
           </Button>
         </View>
       </View>
@@ -127,6 +137,7 @@ function Home({navigation, route}) {
         onDismiss={() => {
           setMessage(null);
         }}
+        style={{position: 'absolute', bottom: 0}}
         action={{
           label: 'dismiss',
           onPress: () => {

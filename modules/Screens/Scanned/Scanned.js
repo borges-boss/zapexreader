@@ -1,5 +1,13 @@
-import React, {useEffect, useState,useRef} from 'react';
-import {View, Text, FlatList, Platform, BackHandler} from 'react-native';
+import React, {useEffect, useState, useRef} from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  Platform,
+  BackHandler,
+  ScrollView,
+  Keyboard,
+} from 'react-native';
 import {TouchableRipple} from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppStyle from '../../Assets/styles/AppStyle';
@@ -11,6 +19,8 @@ import FloatingActionButton from '../Components/FloatingActionButton';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {TextInput, Button} from 'react-native-paper';
 import HardwareUtils from '../../Logic/HardwareUtils';
+import {Alert} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 
 const Item = props => {
   const {colors} = useTheme();
@@ -47,9 +57,8 @@ const Item = props => {
               fontSize: 18,
               marginLeft: 16,
               lineHeight: 25,
-              flexWrap:"wrap",
-              width:"80%"
-
+              flexWrap: 'wrap',
+              width: '80%',
             }}>
             {props.code}
           </Text>
@@ -75,8 +84,6 @@ const Item = props => {
 };
 
 function processBarcode(list, code) {
-  console.log('List of codes fetched: ' + JSON.stringify(list));
-
   if (
     list.filter(value => {
       return value.Codigo == code;
@@ -116,14 +123,34 @@ function processBarcode(list, code) {
     }
   }
 }
-
+//12051
 function Scanned({navigation, route}) {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fieldError, setFieldError] = useState(false);
   const [barcode, setBarcode] = useState(null);
+  const [isScanningMod, setIsScanningMod] = useState(true);
   const {colors} = useTheme();
   let textInputRef = useRef(null);
+  let flatList = useRef(null);
+  let scrollView = useRef(null);
+
+  function _keyboardDidHide() {
+    setIsScanningMod(true);
+    //console.log("Keyboard did hide");
+    if(textInputRef!==null && !textInputRef.isFocused()){
+      textInputRef.focus();
+    }
+  }
+
+  function _keyboardDidShow() {
+    if (isScanningMod === true) {
+      Keyboard.dismiss();
+      if (textInputRef !== null) {
+        textInputRef.focus();
+      }
+    }
+  }
 
   useEffect(() => {
     BackHandler.addEventListener('hardwareBackPress', function () {
@@ -137,10 +164,54 @@ function Scanned({navigation, route}) {
     if (route.params.data !== undefined && route.params.data !== null) {
       setData(route.params.data);
     }
+
+    if (textInputRef !== null) {
+      textInputRef.focus();
+    }
+
+    Keyboard.addListener('keyboardDidHide', _keyboardDidHide);
+    //Keyboard.addListener('keyboardDidShow', _keyboardDidShow);
+    return () => {
+      Keyboard.removeAllListeners('keyboardDidHide');
+      Keyboard.removeAllListeners('keyboardDidShow');
+    };
   }, []);
 
+  const isScanningDone = data => {
+    //If all items were scanned successfully
+    //show alert
+    if (
+      data.filter(value => {
+        return value.isOnTheList !== undefined;
+      }).length === data.length
+    ) {
+      //show alert
+      Alert.alert(
+        'Atenção',
+        'Todos os codigos de barra foram escaneados, deseja retornar a tela principal ?', //body of the alert modal
+        [
+          {
+            text: 'Não',
+            onPress: () => console.log('Cancel Pressed'),
+            style: 'cancel',
+          },
+          {
+            text: 'Sim',
+            onPress: () => {
+              navigation.navigate('Home');
+            },
+          },
+        ],
+      );
+    }
+  };
+
   return (
-    <SafeAreaView style={{height: '100%'}}>
+    <ScrollView
+      //keyboardShouldPersistTaps="handled"
+      ref={ref => {
+        scrollView = ref;
+      }}>
       <Toolbar
         icon={'replay'}
         action={() => {
@@ -150,26 +221,15 @@ function Scanned({navigation, route}) {
 
       <View style={{padding: 8, marginTop: 16}}>
         <TextInput
-        ref={(ref)=>{
-          textInputRef = ref;
-        }}
+          ref={ref => {
+            if (ref !== null) {
+              textInputRef = ref;
+            }
+          }}
+          showSoftInputOnFocus={isScanningMod}
           focusable={true}
           blurOnSubmit={false}
-          autoFocus={true}
-          onSubmitEditing={() => {
-            //navigation.navigate('Barcode', {preScreen: 'Home'});
-            if (barcode !== null && barcode !== '' && barcode !== ' ') {
-              let response = processBarcode(data, barcode);
-              if (response !== null) setData(response);
-            } else {
-              setFieldError(true);
-            }
-            textInputRef.focus();
-            setBarcode('');
-            
-            if(textInputRef!==null) 
-              textInputRef.focus();
-          }}
+          autoFocus={false}
           keyboardType={'numeric'}
           onFocus={() => {
             setFieldError(false);
@@ -183,7 +243,70 @@ function Scanned({navigation, route}) {
           placeholder={'Inserir codigo de barras...'}
           value={barcode}
           onChangeText={text => {
-            setBarcode(text);
+            console.log('IsScanningMod', isScanningMod);
+            if (isScanningMod === false) {
+              console.log('Text', text);
+              setBarcode(text);
+            }
+          }}
+          onChange={({nativeEvent}) => {
+            if (isScanningMod === true) {
+              console.log('onChange');
+              setBarcode('');
+              if (textInputRef !== null) {
+                textInputRef.clear();
+              }
+              //navigation.navigate('Barcode', {preScreen: 'Home'});
+              if (
+                nativeEvent.text !== null &&
+                nativeEvent.text !== '' &&
+                nativeEvent.text !== ' '
+              ) {
+                let response = processBarcode(data, nativeEvent.text);
+                //setData([]);
+                if (response !== null) {
+                  setData(Array.from(response));
+                  isScanningDone(response);
+                }
+              } else {
+                setFieldError(true);
+              }
+              textInputRef.focus();
+
+              if (textInputRef !== null) textInputRef.focus();
+
+              if (flatList !== null)
+                flatList.scrollToOffset({animated: true, offset: 0});
+            }
+          }}
+          onSubmitEditing={({nativeEvent}) => {
+            if (isScanningMod === false) {
+              setBarcode('');
+              if (textInputRef !== null) {
+                textInputRef.clear();
+              }
+              //navigation.navigate('Barcode', {preScreen: 'Home'});
+              if (
+                nativeEvent.text !== null &&
+                nativeEvent.text !== '' &&
+                nativeEvent.text !== ' '
+              ) {
+                let response = processBarcode(data, nativeEvent.text);
+                //setData([]);
+                if (response !== null) {
+                  setData(Array.from(response));
+                  isScanningDone(response);
+                }
+              } else {
+                setFieldError(true);
+              }
+              textInputRef.focus();
+
+              if (textInputRef !== null) textInputRef.focus();
+
+              if (flatList !== null)
+                flatList.scrollToOffset({animated: true, offset: 0});
+            }
           }}
           mode={'outlined'}
           style={{marginBottom: 8}}
@@ -198,18 +321,12 @@ function Scanned({navigation, route}) {
         </Text>
 
         <Button
-          onPress={() => { 
-            //navigation.navigate('Barcode', {preScreen: 'Home'});
-            if (barcode !== null && barcode !== '' && barcode !== ' ') {
-              let response = processBarcode(data, barcode);
-              if (response !== null) setData(response);
-            } else {
-              setFieldError(true);
-            }
-
-            setBarcode('');
-            if(textInputRef!==null) 
+          icon={isScanningMod ? 'keyboard' : 'camera'}
+          onPress={() => {
+            setIsScanningMod(isScanningMod === true ? false : true);
+            if (textInputRef !== null) {
               textInputRef.focus();
+            }
           }}
           loading={isLoading}
           color={'#fff'}
@@ -217,13 +334,15 @@ function Scanned({navigation, route}) {
             backgroundColor: !isLoading ? colors.primary : 'gray',
             padding: 8,
           }}>
-          Procurar
+          {isScanningMod ? 'Digitar' : "Escanear"}
         </Button>
       </View>
       <SafeAreaView style={{padding: 8, flex: 1}}>
         {data.length > 0 ? (
           <FlatList
-            style={{marginTop: '8%'}}
+            ref={ref => {
+              flatList = ref;
+            }}
             data={data}
             keyExtractor={(item, index) => item + index}
             renderItem={({item}) => (
@@ -241,8 +360,7 @@ function Scanned({navigation, route}) {
                   route.params.data = temp;
                   //setData([]);
                   setData(temp);
-                  if(textInputRef!==null) 
-                    textInputRef.focus();
+                  if (textInputRef !== null) textInputRef.focus();
                 }}
               />
             )}
@@ -250,7 +368,7 @@ function Scanned({navigation, route}) {
         ) : (
           <View
             style={{
-              height: '70%',
+              height: '100%',
               justifyContent: 'center',
               alignItems: 'center',
             }}>
@@ -260,22 +378,7 @@ function Scanned({navigation, route}) {
           </View>
         )}
       </SafeAreaView>
-      {/*
-      <FloatingActionButton
-        onPress={async () => {
-          if (
-            Platform.OS === 'android' &&
-            (await PermissionUtils.hasAndroidCameraPermission())
-          ) {
-            navigation.navigate('Barcode', {preScreen: 'Scanned'});
-          }
-        }}
-        icon={'barcode-scan'}
-        backgroundColor={colors.primary}
-        iconColor={'#fff'}
-      />
-      */}
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 

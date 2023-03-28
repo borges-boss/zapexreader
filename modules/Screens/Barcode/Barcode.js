@@ -28,8 +28,6 @@ async function processBarcode(result) {
       return value.Codigo == result.data;
     }).length > 0
   ) {
-
-
     //beep_07
     for (let i = 0; i < global.scannedBarcode.length; i++) {
       if (
@@ -74,7 +72,7 @@ function Barcode({navigation, route}) {
     } else {
       BackHandler.addEventListener('hardwareBackPress', function () {
         console.log('BackHardware button override');
-        navigation.navigate('Scanned',{data:undefined});
+        navigation.navigate('Scanned', {data: undefined});
         return true;
       });
     }

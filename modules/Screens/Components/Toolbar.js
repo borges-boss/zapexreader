@@ -32,6 +32,7 @@ const Toolbar = props => {
         }} name={props.icon} size={24} color={colors.text}/>:
         null
       }
+      
     </View>
   );
 };
