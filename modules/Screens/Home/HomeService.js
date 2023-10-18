@@ -2,7 +2,7 @@ const HomeService = {
   getBarcodeByMapCode: function (code) {
     //26255
     let url =
-      'https://api.zapex.com.br/emissao/itensRomaneio/2LAVUNBOG3TH3HNMND6JC9IKJPC1BY/' +
+      'https://api.zapex.com.br/emissao/itensRomaneio/OCCULT/' +
       code;
     console.log(url);
 
