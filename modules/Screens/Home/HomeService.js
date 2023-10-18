@@ -2,10 +2,9 @@ const HomeService = {
   getBarcodeByMapCode: function (code) {
     //26255
     let url =
-      'https://api.zapex.com.br/emissao/itensRomaneio/OCCULT/' +
+      'https://api.occult.com.br/emissao/itensRomaneio/OCCULT/' +
       code;
-    console.log(url);
-
+    
     return fetch(url, {
       method: 'GET',
       cache: 'no-cache',
